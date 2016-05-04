@@ -2,6 +2,11 @@
 const electron = require('electron');
 const ipc = electron.ipcRenderer;
 const config = electron.remote.require('./config');
+const webFrame = electron.webFrame;
+const app = electron.remote.app;
+const spellchecker = require('spellchecker');
+const storage = electron.remote.require('./storage');
+const dictionary = electron.remote.require('./custom-dictionary');
 
 const listSelector = 'div[role="navigation"] > ul > li';
 const conversationSelector = '._4u-c._1wfr > ._5f0v.uiScrollableArea';
@@ -197,3 +202,25 @@ document.addEventListener('keydown', event => {
 if (config.get('darkMode')) {
 	document.documentElement.style.backgroundColor = '#192633';
 }
+
+const skipWords = [
+	'ain', 'couldn', 'didn', 'doesn', 'hadn', 'hasn', 'mightn', 'mustn',
+	'needn', 'oughtn', 'shan', 'shouldn', 'wasn', 'weren', 'wouldn'
+];
+
+const locale = app.getLocale();
+webFrame.setSpellCheckProvider(locale, true, {
+	spellCheck(text) {
+		// Temprorary work around until Electron fixes contractions
+		// Ref: https://github.com/electron/electron/issues/1005
+		if (skipWords.includes(text)) {
+			return true;
+		}
+
+		if (dictionary.isIgnored(text, locale) || dictionary.isAdded(text, locale)) {
+			return true;
+		}
+
+		return !(spellchecker.isMisspelled(text));
+	}
+});

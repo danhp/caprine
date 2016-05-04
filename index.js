@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const electron = require('electron');
 const app = electron.app;
+const contextMenu = require('./context-menu');
 const appMenu = require('./menu');
 const config = require('./config');
 const tray = require('./tray');
@@ -109,6 +110,12 @@ app.on('ready', () => {
 	page.on('new-window', (e, url) => {
 		e.preventDefault();
 		electron.shell.openExternal(url);
+	});
+
+	page.on('context-menu', (e, params) => {
+		if (params.isEditable || params.selectionText !== '') {
+			contextMenu.popup(params, app.getLocale());
+		}
 	});
 });
 
